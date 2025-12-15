@@ -1,0 +1,63 @@
+# Cloudflare Manager - Docker Compose 配置
+# 
+# 部署前必读：
+# 1. 复制 .env.example 为 .env 并修改安全密钥
+# 2. 确保修改 JWT_SECRET 和 ENCRYPTION_KEY
+# 3. 建议配置反向代理（Nginx/Caddy）
+#
+# 快速启动：
+#   cp .env.example .env
+#   编辑 .env 文件，设置 JWT_SECRET 和 ENCRYPTION_KEY
+#   docker compose up -d
+
+services:
+  cf-manager:
+    # 使用预构建的 Docker 镜像
+    image: binbankm/cf-manager:latest
+    
+    # 如果需要从源码构建，取消注释以下几行，并注释掉上面的 image 行
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    
+    container_name: cf-manager
+    
+    # 端口映射
+    # 生产环境建议只绑定 127.0.0.1，通过反向代理访问
+    # 修改为 "127.0.0.1:5143:5143" 以提高安全性
+    ports:
+      - "5143:5143"
+    
+    # 数据持久化
+    volumes:
+      - ./data:/app/data
+    
+    # 环境变量（从 .env 文件读取）
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-5143}
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DATABASE_PATH=${DATABASE_PATH:-/app/data/database.sqlite}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    
+    # 自动重启策略
+    restart: unless-stopped
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5143/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # 资源限制（可选，根据服务器配置调整）
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '1.0'
+    #       memory: 1024M
+    #     reservations:
+    #       memory: 512M
+

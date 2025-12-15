@@ -1,0 +1,20 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+README.md
+.vscode
+.idea
+*.log
+data/
+dist/
+build/
+.DS_Store
+
+# 重要：排除前后端的node_modules
+frontend/node_modules/
+backend/node_modules/
+frontend/dist/
+frontend/build/
