@@ -36,7 +36,7 @@
 
 ```bash
 # 1. 下载部署脚本
-wget https://raw.githubusercontent.com/your-username/cf-manager/main/deploy.sh
+wget https://raw.githubusercontent.com/binbankm/CF-Manager/main/deploy.sh
 
 # 2. 运行部署（自动生成密钥并启动）
 chmod +x deploy.sh
@@ -47,8 +47,8 @@ chmod +x deploy.sh
 
 ```bash
 # 1. 下载配置文件
-wget https://raw.githubusercontent.com/your-username/cf-manager/main/docker-compose.yml
-wget https://raw.githubusercontent.com/your-username/cf-manager/main/.env.example
+wget https://raw.githubusercontent.com/binbankm/CF-Manager/main/docker-compose.yml
+wget https://raw.githubusercontent.com/binbankm/CF-Manager/main/.env.example
 
 # 2. 配置环境变量
 cp .env.example .env
@@ -275,6 +275,6 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 
 **Made with ❤️ for Cloudflare Developers**
 
-[报告问题](https://github.com/your-username/cf-manager/issues) • [功能建议](https://github.com/your-username/cf-manager/issues)
+[报告问题](https://github.com/binbankm/CF-Manager/issues) • [功能建议](https://github.com/binbankm/CF-Manager/issues)
 
 </div>
