@@ -1,130 +1,137 @@
-# Cloudflare Manager
+<div align="center">
 
-一个现代化的 Cloudflare 资源管理平台，支持 Workers、KV、D1、DNS 和 Pages 的统一管理。
+# ☁️ Cloudflare Manager
+
+**一站式 Cloudflare 资源管理平台**
+
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-binbankm%2Fcf--manager-blue?logo=docker)](https://hub.docker.com/r/binbankm/cf-manager)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+[功能特性](#-功能特性) • [快速开始](#-快速开始) • [配置说明](#-配置说明) • [常用命令](#-常用命令)
+
+</div>
+
+---
 
 ## ✨ 功能特性
 
-- 🚀 **Workers 管理** - 在线编辑、部署和管理 Cloudflare Workers
-- 🗄️ **KV 存储** - 可视化管理 KV 命名空间和键值对
+- 🚀 **Workers** - 在线编辑、部署和管理 Cloudflare Workers 脚本
+- 🗄️ **KV 存储** - 可视化管理 KV 命名空间和键值对数据
 - 💾 **D1 数据库** - 查看和绑定 D1 SQL 数据库
-- 🌐 **DNS 管理** - 完整的 DNS 记录管理功能
-- 📄 **Pages 管理** - 管理 Cloudflare Pages 项目和部署
+- 🌐 **DNS 记录** - 完整的域名 DNS 记录管理
+- 📄 **Pages 项目** - 管理 Cloudflare Pages 部署
 - 🔐 **安全认证** - JWT 认证 + API Token 加密存储
-- 🎨 **现代界面** - 基于 React 的响应式 UI
+- 🎨 **现代 UI** - 响应式设计，支持代码高亮编辑
 
-## 🚀 快速部署
+---
+
+## 🚀 快速开始
 
 ### 前置要求
-- Docker (20.10+)
-- Docker Compose (1.29+)
 
-### 方法 1: 一键部署（推荐）
+- [Docker](https://docs.docker.com/get-docker/) 20.10+
+- [Docker Compose](https://docs.docker.com/compose/install/) 1.29+
+
+### 一键部署
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-username/CF-Manager.git
-cd CF-Manager
+# 1. 下载部署脚本
+wget https://raw.githubusercontent.com/your-username/cf-manager/main/deploy.sh
 
-# 运行部署脚本
+# 2. 运行部署（自动生成密钥并启动）
 chmod +x deploy.sh
 ./deploy.sh
 ```
 
-### 方法 2: 手动部署
+### 手动部署
 
 ```bash
-# 1. 配置环境变量
+# 1. 下载配置文件
+wget https://raw.githubusercontent.com/your-username/cf-manager/main/docker-compose.yml
+wget https://raw.githubusercontent.com/your-username/cf-manager/main/.env.example
+
+# 2. 配置环境变量
 cp .env.example .env
 
-# 2. 生成安全密钥
+# 生成安全密钥
 echo "JWT_SECRET=$(openssl rand -base64 32)" >> .env
 echo "ENCRYPTION_KEY=$(openssl rand -hex 16)" >> .env
 
 # 3. 启动应用
 docker compose up -d
-
-# 4. 查看日志
-docker compose logs -f
 ```
 
-### 方法 3: 仅使用 docker-compose.yml 部署
+### 访问应用
 
-如果您只有 `docker-compose.yml` 文件：
+部署完成后访问：http://localhost:5143
 
-```bash
-# 创建 .env 文件
-cat > .env << EOF
-JWT_SECRET=$(openssl rand -base64 32)
-ENCRYPTION_KEY=$(openssl rand -hex 16)
-NODE_ENV=production
-PORT=5143
-EOF
+---
 
-# 启动应用
-docker compose up -d
+## ⚙️ 配置说明
+
+### 环境变量
+
+编辑 `.env` 文件配置以下变量：
+
+| 变量 | 说明 | 必需 | 示例 |
+|------|------|:----:|------|
+| `JWT_SECRET` | JWT 签名密钥 | ✅ | `openssl rand -base64 32` |
+| `ENCRYPTION_KEY` | API Token 加密密钥（32字符） | ✅ | `openssl rand -hex 16` |
+| `PORT` | 应用端口 | ❌ | `5143` |
+| `NODE_ENV` | 运行环境 | ❌ | `production` |
+
+⚠️ **安全提示**: 生产环境必须使用强随机密钥，不要使用默认值！
+
+### 端口配置
+
+默认端口为 `5143`。如需修改：
+
+```yaml
+# docker-compose.yml
+ports:
+  - "8080:5143"  # 改为 8080 端口访问
 ```
 
-## 🌐 访问应用
+---
 
-部署完成后，访问：
-- **本地**: http://localhost:5143
-- **健康检查**: http://localhost:5143/api/health
-
-## 📋 环境变量配置
-
-| 变量名 | 说明 | 必需 | 默认值 |
-|--------|------|------|--------|
-| `JWT_SECRET` | JWT 签名密钥 | ✅ | - |
-| `ENCRYPTION_KEY` | API Token 加密密钥（32字符） | ✅ | - |
-| `NODE_ENV` | 运行环境 | ❌ | production |
-| `PORT` | 应用端口 | ❌ | 5143 |
-| `DATABASE_PATH` | 数据库路径 | ❌ | /app/data/database.sqlite |
-| `LOG_LEVEL` | 日志级别 | ❌ | info |
-
-### 生成安全密钥
+## � 常用命令
 
 ```bash
-# 生成 JWT_SECRET
-openssl rand -base64 32
-
-# 生成 ENCRYPTION_KEY (必须32字符)
-openssl rand -hex 16
-```
-
-## 🔧 常用命令
-
-```bash
-# 查看容器状态
+# 查看运行状态
 docker compose ps
 
-# 查看日志
+# 查看实时日志
 docker compose logs -f
 
-# 重启应用
+# 重启服务
 docker compose restart
 
-# 停止应用
+# 停止服务
 docker compose down
 
 # 更新到最新版本
 docker compose pull
 docker compose up -d
 
-# 备份数据
-cp ./data/database.sqlite ./data/database.sqlite.backup
+# 备份数据库
+cp ./data/database.sqlite ./backup_$(date +%Y%m%d).sqlite
 ```
 
-## 🔒 生产环境部署建议
+---
 
-### 1. 配置 Nginx 反向代理
+## 🔒 生产环境部署
+
+### 1. 使用反向代理（推荐）
+
+**Nginx 配置示例：**
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name cf-manager.example.com;
 
     location / {
-        proxy_pass http://localhost:5143;
+        proxy_pass http://127.0.0.1:5143;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -133,82 +140,141 @@ server {
 }
 ```
 
-### 2. 启用 HTTPS
+**启用 HTTPS：**
 
 ```bash
 # 使用 Certbot 自动配置 SSL
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d cf-manager.example.com
 ```
 
-### 3. 限制端口访问
+### 2. 限制端口访问
 
-修改 `docker-compose.yml`:
+修改 `docker-compose.yml`，仅允许本地访问：
+
 ```yaml
 ports:
-  - "127.0.0.1:5143:5143"  # 只允许本地访问
+  - "127.0.0.1:5143:5143"  # 只允许 localhost
 ```
 
-### 4. 配置自动备份
+### 3. 定期备份
+
+创建备份脚本：
 
 ```bash
-# 创建备份脚本
-cat > backup.sh << 'EOF'
 #!/bin/bash
-BACKUP_DIR=~/cf-manager-backups
+# backup.sh
+BACKUP_DIR=~/backups
 mkdir -p $BACKUP_DIR
-DATE=$(date +%Y%m%d_%H%M%S)
-cp ./data/database.sqlite $BACKUP_DIR/database_$DATE.sqlite
-find $BACKUP_DIR -name "database_*.sqlite" -mtime +7 -delete
-EOF
-
-chmod +x backup.sh
-
-# 添加定时任务（每天凌晨2点）
-(crontab -l 2>/dev/null; echo "0 2 * * * ~/CF-Manager/backup.sh") | crontab -
+cp ./data/database.sqlite $BACKUP_DIR/db_$(date +%Y%m%d_%H%M%S).sqlite
+find $BACKUP_DIR -name "db_*.sqlite" -mtime +7 -delete
 ```
 
-## 📚 更多文档
+添加定时任务（每天凌晨 2 点）：
 
-- [VPS 部署指南](./docs/vps-deployment.md)
-- [Docker 镜像发布指南](./docs/docker-publishing.md)
-- [API 文档](./docs/api.md)
+```bash
+chmod +x backup.sh
+(crontab -l 2>/dev/null; echo "0 2 * * * ~/cf-manager/backup.sh") | crontab -
+```
+
+---
+
+## � 故障排查
+
+### 容器无法启动
+
+```bash
+# 查看详细日志
+docker compose logs -f
+
+# 检查端口占用
+sudo netstat -tulpn | grep 5143
+```
+
+### 重置数据库
+
+⚠️ **警告**: 此操作会删除所有数据！
+
+```bash
+docker compose down
+rm -f ./data/database.sqlite
+docker compose up -d
+```
+
+### 忘记密码
+
+目前无法重置密码，需要重新注册或重置数据库。
+
+---
 
 ## 🛠️ 技术栈
 
-### 后端
+**后端**
 - Node.js + Express
-- SQLite3 + Sequelize ORM
+- SQLite3 + Sequelize
 - JWT 认证
-- Cloudflare API 集成
+- Cloudflare API
 
-### 前端
-- React 18
-- Vite
+**前端**
+- React 18 + Vite
 - TailwindCSS
 - Monaco Editor
 - Lucide Icons
 
+---
+
 ## 📝 开源协议
 
-MIT License
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+---
 
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-## ⚠️ 重要提示
-
-- **安全**: 生产环境必须修改 `.env` 中的密钥
-- **备份**: 定期备份 `./data/database.sqlite`
-- **更新**: 使用 `docker compose pull` 获取最新版本
-- **网络**: 建议配置反向代理和 HTTPS
-
-## 📞 支持
-
-如有问题，请通过以下方式联系：
-- GitHub Issues
-- Email: your-email@example.com
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 提交 Pull Request
 
 ---
 
+## � 常见问题
+
+<details>
+<summary><strong>如何添加多个 Cloudflare 账号？</strong></summary>
+
+登录后，在账号管理页面点击"添加账号"，输入新的 Cloudflare API Token 即可。
+
+</details>
+
+<details>
+<summary><strong>数据存储在哪里？</strong></summary>
+
+所有数据存储在 `./data/database.sqlite` 文件中，建议定期备份。
+
+</details>
+
+<details>
+<summary><strong>是否支持多用户？</strong></summary>
+
+是的，支持多用户注册和独立管理各自的 Cloudflare 账号。
+
+</details>
+
+---
+
+## ⭐ Star History
+
+如果这个项目对您有帮助，请考虑给个 Star ⭐
+
+---
+
+<div align="center">
+
 **Made with ❤️ for Cloudflare Developers**
+
+[报告问题](https://github.com/your-username/cf-manager/issues) • [功能建议](https://github.com/your-username/cf-manager/issues)
+
+</div>
