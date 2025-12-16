@@ -1,14 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { LogOut, Cloud, Plus, Server, Database, Globe, FileCode, Settings, HardDrive } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
 import { accountAPI } from '../services/api';
 import AccountManager from '../components/AccountManager';
-import WorkersPanel from '../components/WorkersPanel';
-import KVPanel from '../components/KVPanel';
-import DNSPanel from '../components/DNSPanel';
-import PagesPanel from '../components/PagesPanel';
-import D1Panel from '../components/D1Panel';
+
+// 懒加载Panel组件以提升性能
+const WorkersPanel = lazy(() => import('../components/WorkersPanel'));
+const KVPanel = lazy(() => import('../components/KVPanel'));
+const DNSPanel = lazy(() => import('../components/DNSPanel'));
+const PagesPanel = lazy(() => import('../components/PagesPanel'));
+const D1Panel = lazy(() => import('../components/D1Panel'));
+
+// 加载中组件
+const PanelLoader = () => (
+    <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+        <span className="ml-3 text-gray-400">加载中...</span>
+    </div>
+);
 
 function Dashboard() {
     const user = useAuthStore((state) => state.user);
@@ -155,13 +165,15 @@ function Dashboard() {
                             })}
                         </div>
 
-                        {/* 内容面板 */}
+                        {/* 内容面板 - 使用Suspense和条件渲染优化性能 */}
                         <div className="animate-fade-in">
-                            {activeTab === 'workers' && <WorkersPanel accountId={selectedAccount.id} />}
-                            {activeTab === 'kv' && <KVPanel accountId={selectedAccount.id} />}
-                            {activeTab === 'd1' && <D1Panel accountId={selectedAccount.id} />}
-                            {activeTab === 'dns' && <DNSPanel accountId={selectedAccount.id} />}
-                            {activeTab === 'pages' && <PagesPanel accountId={selectedAccount.id} />}
+                            <Suspense fallback={<PanelLoader />}>
+                                {activeTab === 'workers' && <WorkersPanel accountId={selectedAccount.id} />}
+                                {activeTab === 'kv' && <KVPanel accountId={selectedAccount.id} />}
+                                {activeTab === 'd1' && <D1Panel accountId={selectedAccount.id} />}
+                                {activeTab === 'dns' && <DNSPanel accountId={selectedAccount.id} />}
+                                {activeTab === 'pages' && <PagesPanel accountId={selectedAccount.id} />}
+                            </Suspense>
                         </div>
                     </>
                 )}

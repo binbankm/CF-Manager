@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileCode, Rocket, Clock, CheckCircle, XCircle, ExternalLink, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { pagesAPI } from '../services/api';
 import { SkeletonCard, SkeletonListItem } from './SkeletonLoader';
 
-function PagesPanel({ accountId }) {
+const PagesPanel = ({ accountId }) => {
     const [projects, setProjects] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
     const [deployments, setDeployments] = useState([]);
@@ -75,10 +75,12 @@ function PagesPanel({ accountId }) {
         }
     };
 
-    // 过滤项目
-    const filteredProjects = projects.filter(project =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // 使用useMemo缓存过滤项目
+    const filteredProjects = useMemo(() => {
+        return projects.filter(project =>
+            project.name.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [projects, searchQuery]);
 
     if (loading) {
         return (
@@ -229,6 +231,6 @@ function PagesPanel({ accountId }) {
             </div>
         </div>
     );
-}
+};
 
-export default PagesPanel;
+export default React.memo(PagesPanel);

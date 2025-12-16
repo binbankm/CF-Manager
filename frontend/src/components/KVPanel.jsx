@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Database, Plus, Trash2, Edit, Save, X, Search, Upload, Download, CheckSquare, Square, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { kvAPI } from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 import { SkeletonCard } from './SkeletonLoader';
 
-function KVPanel({ accountId }) {
+const KVPanel = ({ accountId }) => {
     const [namespaces, setNamespaces] = useState([]);
     const [selectedNamespace, setSelectedNamespace] = useState(null);
     const [keys, setKeys] = useState([]);
@@ -554,6 +554,6 @@ function KVPanel({ accountId }) {
             </div>
         </div>
     );
-}
+};
 
-export default KVPanel;
+export default React.memo(KVPanel);

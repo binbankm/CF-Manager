@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Globe, Plus, Edit, Trash2, Shield, ShieldOff, Search, Download, Upload, FileText, X, RotateCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dnsAPI } from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 import { SkeletonCard, SkeletonTableRow } from './SkeletonLoader';
 
-function DNSPanel({ accountId }) {
+const DNSPanel = ({ accountId }) => {
     const [zones, setZones] = useState([]);
     const [selectedZone, setSelectedZone] = useState(null);
     const [records, setRecords] = useState([]);
@@ -148,12 +148,14 @@ function DNSPanel({ accountId }) {
         }
     };
 
-    // 过滤DNS记录
-    const filteredRecords = records.filter(record =>
-        record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.type.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // 使用useMemo缓存过滤结果，避免每次渲染都重新计算
+    const filteredRecords = useMemo(() => {
+        return records.filter(record =>
+            record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            record.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            record.type.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [records, searchQuery]);
 
     const recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
 
@@ -451,6 +453,6 @@ function DNSPanel({ accountId }) {
             />
         </div>
     );
-}
+};
 
-export default DNSPanel;
+export default React.memo(DNSPanel);

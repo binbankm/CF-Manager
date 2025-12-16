@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Database, RotateCw, Search, Plus, HardDrive } from 'lucide-react';
 import { d1API } from '../services/api';
 import toast from 'react-hot-toast';
 import { SkeletonCard } from './SkeletonLoader';
 
-function D1Panel({ accountId }) {
+const D1Panel = ({ accountId }) => {
     const [databases, setDatabases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -28,10 +28,13 @@ function D1Panel({ accountId }) {
         }
     };
 
-    const filteredDatabases = databases.filter(db =>
-        db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        db.uuid.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // 使用useMemo缓存过滤结果
+    const filteredDatabases = useMemo(() => {
+        return databases.filter(db =>
+            db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            db.uuid.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [databases, searchQuery]);
 
     return (
         <div className="space-y-6">
@@ -100,8 +103,8 @@ function D1Panel({ accountId }) {
                                     </div>
                                 </div>
                                 <span className={`px-2 py-0.5 rounded text-xs border ${db.version === 'beta'
-                                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                        : 'bg-green-500/10 text-green-400 border-green-500/20'
+                                    ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                    : 'bg-green-500/10 text-green-400 border-green-500/20'
                                     }`}>
                                     {db.version || 'Beta'}
                                 </span>
@@ -141,6 +144,6 @@ function D1Panel({ accountId }) {
             )}
         </div>
     );
-}
+};
 
-export default D1Panel;
+export default React.memo(D1Panel);

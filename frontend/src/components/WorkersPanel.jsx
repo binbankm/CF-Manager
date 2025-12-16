@@ -894,4 +894,4 @@ async function handleRequest(request) {
     );
 }
 
-export default WorkersPanel;
+export default React.memo(WorkersPanel);

@@ -1,8 +1,11 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
-// 数据库路径
-const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../data/database.sqlite');
+// 数据库路径配置
+// 开发和生产环境都使用项目根目录的 data 文件夹
+// 开发环境: CF-Manager/data/database.sqlite
+// Docker环境: /app/data/database.sqlite (挂载自根目录的 ./data)
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../../../data/database.sqlite');
 
 // 创建Sequelize实例
 const sequelize = new Sequelize({
