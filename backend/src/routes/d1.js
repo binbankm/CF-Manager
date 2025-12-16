@@ -41,8 +41,6 @@ router.get('/:accountId/databases', authMiddleware, async (req, res) => {
 
         const result = await cfService.getD1Databases(account.account_id, page, perPage);
 
-        console.log('[D1 API] Response from Cloudflare:', JSON.stringify(result, null, 2));
-
         res.json({
             success: true,
             data: result

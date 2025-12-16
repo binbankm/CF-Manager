@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Database, Plus, Trash2, Edit, Search, Upload, Download, CheckSquare, Square, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { kvAPI } from '../services/api';
@@ -33,7 +33,7 @@ const KVPanel = ({ accountId }) => {
         if (selectedNamespace) {
             loadKeys();
         }
-    }, [selectedNamespace, debouncedSearchPrefix]);
+    }, [selectedNamespace, debouncedSearchPrefix, loadKeys]);
 
     const loadNamespaces = async () => {
         try {
@@ -49,16 +49,17 @@ const KVPanel = ({ accountId }) => {
         }
     };
 
-    const loadKeys = async () => {
+    const loadKeys = useCallback(async () => {
+        if (!selectedNamespace) return;
         try {
-            const response = await kvAPI.getKeys(accountId, selectedNamespace.id, searchPrefix);
+            const response = await kvAPI.getKeys(accountId, selectedNamespace.id, debouncedSearchPrefix);
             if (response.data.success && response.data.data) {
                 setKeys(response.data.data.result || []);
             }
         } catch (error) {
             console.error('加载键列表失败:', error);
         }
-    };
+    }, [accountId, selectedNamespace, debouncedSearchPrefix]);
 
     const createNamespace = async () => {
         if (!newNSName.trim()) {
@@ -181,18 +182,18 @@ const KVPanel = ({ accountId }) => {
         }
     };
 
-    const toggleBulkMode = () => {
-        setIsBulkMode(!isBulkMode);
+    const toggleBulkMode = useCallback(() => {
+        setIsBulkMode(prev => !prev);
         setSelectedKeys([]);
-    };
+    }, []);
 
-    const toggleKeySelection = (keyName) => {
+    const toggleKeySelection = useCallback((keyName) => {
         setSelectedKeys(prev =>
             prev.includes(keyName)
                 ? prev.filter(k => k !== keyName)
                 : [...prev, keyName]
         );
-    };
+    }, []);
 
     const bulkDeleteKeys = async () => {
         if (selectedKeys.length === 0) {
@@ -211,10 +212,10 @@ const KVPanel = ({ accountId }) => {
         }
     };
 
-    const copyToClipboard = (text) => {
+    const copyToClipboard = useCallback((text) => {
         navigator.clipboard.writeText(text);
         toast.success('已复制到剪贴板');
-    };
+    }, []);
 
     if (loading) {
         return (

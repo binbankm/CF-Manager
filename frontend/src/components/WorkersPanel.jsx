@@ -28,42 +28,8 @@ function WorkersPanel({ accountId }) {
     const [kvLoaded, setKvLoaded] = useState(false);
     const [d1Loaded, setD1Loaded] = useState(false);
 
-    useEffect(() => {
-        setWorkers([]);
-        setKvNamespaces([]);
-        setD1Databases([]);
-        setBindings([]);
-        setSelectedWorker(null);
-        setEditorContent('');
-        setSearchQuery('');
-        setKvLoaded(false);
-        setD1Loaded(false);
-        loadWorkers();
-    }, [accountId]);
-
-    useEffect(() => {
-        if (selectedWorker && activeTab === 'settings') {
-            loadWorkerSettings(selectedWorker);
-            // Only load KV/D1 data once per account session
-            if (!kvLoaded) {
-                loadKvNamespaces();
-            }
-            if (!d1Loaded) {
-                loadD1Databases();
-            }
-        }
-    }, [selectedWorker, activeTab, kvLoaded, d1Loaded]);
-
-    // Debounce search query for better performance
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 300); // 300ms debounce
-
-        return () => clearTimeout(handler);
-    }, [searchQuery]);
-
-    const loadWorkers = async () => {
+    // 使用 useCallback 优化函数，避免不必要的重新创建
+    const loadWorkers = useCallback(async () => {
         try {
             setLoading(true);
             const response = await workersAPI.getWorkers(accountId);
@@ -76,9 +42,9 @@ function WorkersPanel({ accountId }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [accountId]);
 
-    const loadKvNamespaces = async () => {
+    const loadKvNamespaces = useCallback(async () => {
         try {
             const response = await kvAPI.getNamespaces(accountId);
             if (response.data.success && response.data.data) {
@@ -88,9 +54,9 @@ function WorkersPanel({ accountId }) {
         } catch (error) {
             console.error('加载KV命名空间失败:', error);
         }
-    };
+    }, [accountId]);
 
-    const loadD1Databases = async () => {
+    const loadD1Databases = useCallback(async () => {
         try {
             const response = await d1API.getDatabases(accountId);
             if (response.data.success && response.data.data) {
@@ -100,7 +66,44 @@ function WorkersPanel({ accountId }) {
         } catch (error) {
             console.error('加载D1数据库失败:', error);
         }
-    };
+    }, [accountId]);
+
+    useEffect(() => {
+        setWorkers([]);
+        setKvNamespaces([]);
+        setD1Databases([]);
+        setBindings([]);
+        setSelectedWorker(null);
+        setEditorContent('');
+        setSearchQuery('');
+        setKvLoaded(false);
+        setD1Loaded(false);
+        loadWorkers();
+    }, [accountId, loadWorkers]);
+
+    useEffect(() => {
+        if (selectedWorker && activeTab === 'settings') {
+            loadWorkerSettings(selectedWorker);
+            // Only load KV/D1 data once per account session
+            if (!kvLoaded) {
+                loadKvNamespaces();
+            }
+            if (!d1Loaded) {
+                loadD1Databases();
+            }
+        }
+    }, [selectedWorker, activeTab, kvLoaded, d1Loaded, loadKvNamespaces, loadD1Databases]);
+
+    // Debounce search query for better performance
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    // loadWorkers, loadKvNamespaces, loadD1Databases 已移至 useEffect 之前定义为 useCallback
 
     const loadWorkerScript = async (scriptName) => {
         try {
@@ -212,22 +215,21 @@ function WorkersPanel({ accountId }) {
         });
     }, []);
 
-    const addEnvVar = () => {
-        setBindings([...bindings, { name: '', type: 'plain_text', text: '' }]);
-    };
+    const addEnvVar = useCallback(() => {
+        setBindings(prev => [...prev, { name: '', type: 'plain_text', text: '' }]);
+    }, []);
 
-    const addKvBinding = () => {
-        setBindings([...bindings, { name: '', type: 'kv_namespace', namespace_id: '' }]);
-    };
+    const addKvBinding = useCallback(() => {
+        setBindings(prev => [...prev, { name: '', type: 'kv_namespace', namespace_id: '' }]);
+    }, []);
 
-    const addD1Binding = () => {
-        setBindings([...bindings, { name: '', type: 'd1_database', database_id: '' }]);
-    };
+    const addD1Binding = useCallback(() => {
+        setBindings(prev => [...prev, { name: '', type: 'd1_database', database_id: '' }]);
+    }, []);
 
-    const removeBinding = (index) => {
-        const newBindings = bindings.filter((_, i) => i !== index);
-        setBindings(newBindings);
-    };
+    const removeBinding = useCallback((index) => {
+        setBindings(prev => prev.filter((_, i) => i !== index));
+    }, []);
 
     const handleSave = () => {
         setIsEditing(false);
