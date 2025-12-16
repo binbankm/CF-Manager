@@ -22,19 +22,10 @@ const KVPanel = ({ accountId }) => {
     const [selectedKeys, setSelectedKeys] = useState([]);
     const [isBulkMode, setIsBulkMode] = useState(false);
 
-    useEffect(() => {
-        loadNamespaces();
-    }, [loadNamespaces]);
-
     // 使用防抖优化搜索，避免每次输入都请求API
     const debouncedSearchPrefix = useDebounce(searchPrefix, 300);
 
-    useEffect(() => {
-        if (selectedNamespace) {
-            loadKeys();
-        }
-    }, [selectedNamespace, debouncedSearchPrefix, loadKeys]);
-
+    // 定义函数（必须在 useEffect 之前）
     const loadNamespaces = useCallback(async () => {
         try {
             setLoading(true);
@@ -49,10 +40,6 @@ const KVPanel = ({ accountId }) => {
         }
     }, [accountId]);
 
-    useEffect(() => {
-        loadNamespaces();
-    }, [loadNamespaces]);
-
     const loadKeys = useCallback(async () => {
         if (!selectedNamespace) return;
         try {
@@ -64,6 +51,17 @@ const KVPanel = ({ accountId }) => {
             console.error('加载键列表失败:', error);
         }
     }, [accountId, selectedNamespace, debouncedSearchPrefix]);
+
+    // useEffect 在函数定义之后
+    useEffect(() => {
+        loadNamespaces();
+    }, [loadNamespaces]);
+
+    useEffect(() => {
+        if (selectedNamespace) {
+            loadKeys();
+        }
+    }, [selectedNamespace, debouncedSearchPrefix, loadKeys]);
 
     const createNamespace = async () => {
         if (!newNSName.trim()) {
