@@ -109,19 +109,41 @@ GITHUB_RAW_URL="https://raw.githubusercontent.com/binbankm/CF-Manager/main"
 # 检查并下载 docker-compose.yml
 if [ ! -f "docker-compose.yml" ]; then
     print_info "下载 docker-compose.yml..."
+    
     if command_exists wget; then
-        wget -q "$GITHUB_RAW_URL/docker-compose.yml" -O docker-compose.yml
+        if wget -q "$GITHUB_RAW_URL/docker-compose.yml" -O docker-compose.yml; then
+            print_success "docker-compose.yml 下载成功"
+        else
+            print_error "docker-compose.yml 下载失败"
+            echo ""
+            echo "请检查网络连接或手动下载："
+            echo "  wget $GITHUB_RAW_URL/docker-compose.yml"
+            exit 1
+        fi
     elif command_exists curl; then
-        curl -sL "$GITHUB_RAW_URL/docker-compose.yml" -o docker-compose.yml
+        if curl -fsSL "$GITHUB_RAW_URL/docker-compose.yml" -o docker-compose.yml; then
+            print_success "docker-compose.yml 下载成功"
+        else
+            print_error "docker-compose.yml 下载失败"
+            echo ""
+            echo "请检查网络连接或手动下载："
+            echo "  curl -O $GITHUB_RAW_URL/docker-compose.yml"
+            exit 1
+        fi
     else
         print_error "需要 wget 或 curl 来下载文件"
+        echo ""
+        echo "请手动下载 docker-compose.yml："
+        echo "  $GITHUB_RAW_URL/docker-compose.yml"
         exit 1
     fi
     
-    if [ -f "docker-compose.yml" ]; then
-        print_success "docker-compose.yml 下载成功"
-    else
-        print_error "docker-compose.yml 下载失败"
+    # 验证文件内容
+    if ! grep -q "services:" docker-compose.yml 2>/dev/null; then
+        print_error "docker-compose.yml 文件内容无效"
+        rm -f docker-compose.yml
+        echo ""
+        echo "请手动下载正确的 docker-compose.yml 文件"
         exit 1
     fi
 else
@@ -134,7 +156,7 @@ if [ ! -f ".env.example" ]; then
     if command_exists wget; then
         wget -q "$GITHUB_RAW_URL/.env.example" -O .env.example 2>/dev/null || true
     elif command_exists curl; then
-        curl -sL "$GITHUB_RAW_URL/.env.example" -o .env.example 2>/dev/null || true
+        curl -fsSL "$GITHUB_RAW_URL/.env.example" -o .env.example 2>/dev/null || true
     fi
     
     if [ -f ".env.example" ]; then
@@ -252,6 +274,22 @@ print_success "备份目录: ./backups"
 # 5. 部署应用
 # ============================================
 print_header "部署应用"
+
+# 最后确认必要文件存在
+if [ ! -f "docker-compose.yml" ]; then
+    print_error "docker-compose.yml 文件不存在"
+    echo ""
+    echo "请手动下载该文件："
+    echo "  wget https://raw.githubusercontent.com/binbankm/CF-Manager/main/docker-compose.yml"
+    exit 1
+fi
+
+if [ ! -f ".env" ]; then
+    print_error ".env 文件不存在"
+    echo ""
+    echo "配置文件创建失败，请检查前面的错误信息"
+    exit 1
+fi
 
 if [ "$BUILD_FROM_SOURCE" = true ]; then
     print_info "从源码构建镜像..."
