@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Database, RotateCw, Search, Plus, HardDrive } from 'lucide-react';
+import { Database, RotateCw, Search, HardDrive } from 'lucide-react';
 import { d1API } from '../services/api';
 import toast from 'react-hot-toast';
 import { SkeletonCard } from './SkeletonLoader';
+import { useDebounce } from '../hooks/useDebounce';
 
 const D1Panel = ({ accountId }) => {
     const [databases, setDatabases] = useState([]);
@@ -28,13 +29,19 @@ const D1Panel = ({ accountId }) => {
         }
     };
 
+    // 使用防抖优化搜索性能
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
     // 使用useMemo缓存过滤结果
     const filteredDatabases = useMemo(() => {
+        if (!debouncedSearchQuery) return databases;
+
+        const query = debouncedSearchQuery.toLowerCase();
         return databases.filter(db =>
-            db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            db.uuid.toLowerCase().includes(searchQuery.toLowerCase())
+            db.name.toLowerCase().includes(query) ||
+            db.uuid.toLowerCase().includes(query)
         );
-    }, [databases, searchQuery]);
+    }, [databases, debouncedSearchQuery]);
 
     return (
         <div className="space-y-6">

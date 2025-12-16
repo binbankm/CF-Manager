@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Code, Plus, Trash2, Save, Edit, X, Search, Maximize, Minimize, Globe, Settings, FileJson, Check, Database, HardDrive, RotateCw } from 'lucide-react';
+import { Code, Plus, Trash2, Save, Edit, Search, Maximize, Minimize, Globe, FileJson, Check, Database, HardDrive, RotateCw } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import toast from 'react-hot-toast';
 import { workersAPI, kvAPI, d1API } from '../services/api';

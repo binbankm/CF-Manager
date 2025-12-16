@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Globe, Plus, Edit, Trash2, Shield, ShieldOff, Search, Download, Upload, FileText, X, RotateCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { dnsAPI } from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 import { SkeletonCard, SkeletonTableRow } from './SkeletonLoader';
+import { useDebounce } from '../hooks/useDebounce';
 
 const DNSPanel = ({ accountId }) => {
     const [zones, setZones] = useState([]);
@@ -105,13 +106,13 @@ const DNSPanel = ({ accountId }) => {
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement('a');
             link.href = url;
-            link.setAttribute('download', `dns -export -${selectedZone.name}.txt`);
+            link.setAttribute('download', `dns-export-${selectedZone.name}.txt`);
             document.body.appendChild(link);
             link.click();
             link.remove();
             toast.success('导出成功');
         } catch (error) {
-            console.error('Export failed:', error);
+            console.error('导出失败:', error);
             toast.error('导出失败');
         }
     };
@@ -133,29 +134,33 @@ const DNSPanel = ({ accountId }) => {
                 toast.success(`成功导入 ${success} 条记录`);
             } else {
                 toast.success(`导入完成: ${success} 成功, ${failed} 失败`);
-                // 可以在这里显示失败详情，简单起见先打Log
-                console.log('Import details:', details);
             }
 
             setShowImportModal(false);
             setImportFile(null);
-            loadRecords(); // Changed from loadRecords(selectedZone.id) to loadRecords() as selectedZone is already in scope
+            loadRecords();
         } catch (error) {
-            console.error('Import failed:', error);
+            console.error('导入失败:', error);
             toast.error('导入失败: ' + (error.response?.data?.message || error.message));
         } finally {
             setIsImporting(false);
         }
     };
 
+    // 使用防抖优化搜索性能，避免每次输入都触发过滤
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
     // 使用useMemo缓存过滤结果，避免每次渲染都重新计算
     const filteredRecords = useMemo(() => {
+        if (!debouncedSearchQuery) return records;
+
+        const query = debouncedSearchQuery.toLowerCase();
         return records.filter(record =>
-            record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            record.type.toLowerCase().includes(searchQuery.toLowerCase())
+            record.name.toLowerCase().includes(query) ||
+            record.content.toLowerCase().includes(query) ||
+            record.type.toLowerCase().includes(query)
         );
-    }, [records, searchQuery]);
+    }, [records, debouncedSearchQuery]);
 
     const recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
 

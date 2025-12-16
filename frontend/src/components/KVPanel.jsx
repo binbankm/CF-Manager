@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Database, Plus, Trash2, Edit, Save, X, Search, Upload, Download, CheckSquare, Square, Copy } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Database, Plus, Trash2, Edit, Search, Upload, Download, CheckSquare, Square, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { kvAPI } from '../services/api';
 import ConfirmDialog from './ConfirmDialog';
 import { SkeletonCard } from './SkeletonLoader';
+import { useDebounce } from '../hooks/useDebounce';
 
 const KVPanel = ({ accountId }) => {
     const [namespaces, setNamespaces] = useState([]);
@@ -25,11 +26,14 @@ const KVPanel = ({ accountId }) => {
         loadNamespaces();
     }, [accountId]);
 
+    // 使用防抖优化搜索，避免每次输入都请求API
+    const debouncedSearchPrefix = useDebounce(searchPrefix, 300);
+
     useEffect(() => {
         if (selectedNamespace) {
             loadKeys();
         }
-    }, [selectedNamespace, searchPrefix]);
+    }, [selectedNamespace, debouncedSearchPrefix]);
 
     const loadNamespaces = async () => {
         try {
@@ -206,8 +210,6 @@ const KVPanel = ({ accountId }) => {
             toast.error('批量删除失败');
         }
     };
-
-    const handleSaveKey = saveKey; // Alias for clarify
 
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text);
@@ -474,7 +476,7 @@ const KVPanel = ({ accountId }) => {
                                     取消
                                 </button>
                                 <button
-                                    onClick={handleSaveKey}
+                                    onClick={saveKey}
                                     className="btn btn-primary"
                                     disabled={!editingKey.key || !editingKey.value}
                                 >

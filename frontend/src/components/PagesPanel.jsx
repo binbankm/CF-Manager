@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FileCode, Rocket, Clock, CheckCircle, XCircle, ExternalLink, Search } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { FileCode, Clock, CheckCircle, XCircle, ExternalLink, Search } from 'lucide-react';
 import { pagesAPI } from '../services/api';
 import { SkeletonCard, SkeletonListItem } from './SkeletonLoader';
+import { useDebounce } from '../hooks/useDebounce';
 
 const PagesPanel = ({ accountId }) => {
     const [projects, setProjects] = useState([]);
@@ -75,12 +75,18 @@ const PagesPanel = ({ accountId }) => {
         }
     };
 
+    // 使用防抖优化搜索性能
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
     // 使用useMemo缓存过滤项目
     const filteredProjects = useMemo(() => {
+        if (!debouncedSearchQuery) return projects;
+
+        const query = debouncedSearchQuery.toLowerCase();
         return projects.filter(project =>
-            project.name.toLowerCase().includes(searchQuery.toLowerCase())
+            project.name.toLowerCase().includes(query)
         );
-    }, [projects, searchQuery]);
+    }, [projects, debouncedSearchQuery]);
 
     if (loading) {
         return (
