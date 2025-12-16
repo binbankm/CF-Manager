@@ -165,16 +165,24 @@ function Dashboard() {
                             })}
                         </div>
 
-                        {/* 内容面板 - 使用Suspense和条件渲染优化性能 */}
-                        <div className="animate-fade-in">
-                            <Suspense fallback={<PanelLoader />}>
-                                {activeTab === 'workers' && <WorkersPanel accountId={selectedAccount.id} />}
-                                {activeTab === 'kv' && <KVPanel accountId={selectedAccount.id} />}
-                                {activeTab === 'd1' && <D1Panel accountId={selectedAccount.id} />}
-                                {activeTab === 'dns' && <DNSPanel accountId={selectedAccount.id} />}
-                                {activeTab === 'pages' && <PagesPanel accountId={selectedAccount.id} />}
-                            </Suspense>
-                        </div>
+                        {/* 内容面板 - 保持所有Panel挂载，只控制显示隐藏以提升性能 */}
+                        <Suspense fallback={<PanelLoader />}>
+                            <div className={activeTab === 'workers' ? 'block' : 'hidden'}>
+                                <WorkersPanel accountId={selectedAccount.id} />
+                            </div>
+                            <div className={activeTab === 'kv' ? 'block' : 'hidden'}>
+                                <KVPanel accountId={selectedAccount.id} />
+                            </div>
+                            <div className={activeTab === 'd1' ? 'block' : 'hidden'}>
+                                <D1Panel accountId={selectedAccount.id} />
+                            </div>
+                            <div className={activeTab === 'dns' ? 'block' : 'hidden'}>
+                                <DNSPanel accountId={selectedAccount.id} />
+                            </div>
+                            <div className={activeTab === 'pages' ? 'block' : 'hidden'}>
+                                <PagesPanel accountId={selectedAccount.id} />
+                            </div>
+                        </Suspense>
                     </>
                 )}
             </div>

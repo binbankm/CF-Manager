@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Database, Plus, Trash2, Edit, Search, Upload, Download, CheckSquare, Square, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { kvAPI } from '../services/api';
@@ -24,7 +24,7 @@ const KVPanel = ({ accountId }) => {
 
     useEffect(() => {
         loadNamespaces();
-    }, [accountId]);
+    }, [loadNamespaces]);
 
     // 使用防抖优化搜索，避免每次输入都请求API
     const debouncedSearchPrefix = useDebounce(searchPrefix, 300);
@@ -35,7 +35,7 @@ const KVPanel = ({ accountId }) => {
         }
     }, [selectedNamespace, debouncedSearchPrefix, loadKeys]);
 
-    const loadNamespaces = async () => {
+    const loadNamespaces = useCallback(async () => {
         try {
             setLoading(true);
             const response = await kvAPI.getNamespaces(accountId);
@@ -47,7 +47,11 @@ const KVPanel = ({ accountId }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [accountId]);
+
+    useEffect(() => {
+        loadNamespaces();
+    }, [loadNamespaces]);
 
     const loadKeys = useCallback(async () => {
         if (!selectedNamespace) return;

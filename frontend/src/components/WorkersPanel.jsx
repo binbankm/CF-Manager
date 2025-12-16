@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Code, Plus, Trash2, Save, Edit, Search, Maximize, Minimize, Globe, FileJson, Check, Database, HardDrive, RotateCw } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import toast from 'react-hot-toast';
@@ -27,6 +27,12 @@ function WorkersPanel({ accountId }) {
     const [loadingSettings, setLoadingSettings] = useState(false);
     const [kvLoaded, setKvLoaded] = useState(false);
     const [d1Loaded, setD1Loaded] = useState(false);
+    const [loadingScript, setLoadingScript] = useState(false);
+
+    // 使用 useRef 缓存已加载的脚本，避免重复请求
+    const scriptCache = useRef({});
+    // 使用 useRef 存储 Monaco Editor 实例
+    const editorRef = useRef(null);
 
     // 使用 useCallback 优化函数，避免不必要的重新创建
     const loadWorkers = useCallback(async () => {
@@ -105,19 +111,36 @@ function WorkersPanel({ accountId }) {
 
     // loadWorkers, loadKvNamespaces, loadD1Databases 已移至 useEffect 之前定义为 useCallback
 
-    const loadWorkerScript = async (scriptName) => {
+    const loadWorkerScript = useCallback(async (scriptName) => {
+        // 先检查缓存
+        if (scriptCache.current[scriptName]) {
+            setEditorContent(scriptCache.current[scriptName]);
+            setSelectedWorker(scriptName);
+            setActiveTab('code');
+            setIsEditing(false);
+            return;
+        }
+
         try {
+            setLoadingScript(true);
             const response = await workersAPI.getWorkerScript(accountId, scriptName);
             const scriptContent = response.data.data || response.data || '// Worker脚本';
-            setEditorContent(typeof scriptContent === 'string' ? scriptContent : scriptContent.script || '// Worker脚本');
+            const content = typeof scriptContent === 'string' ? scriptContent : scriptContent.script || '// Worker脚本';
+
+            // 存入缓存
+            scriptCache.current[scriptName] = content;
+
+            setEditorContent(content);
             setSelectedWorker(scriptName);
             setActiveTab('code');
             setIsEditing(false);
         } catch (error) {
             console.error('加载脚本错误:', error);
             toast.error('加载脚本失败');
+        } finally {
+            setLoadingScript(false);
         }
-    };
+    }, [accountId]);
 
     const loadWorkerSettings = async (scriptName) => {
         try {
@@ -231,21 +254,26 @@ function WorkersPanel({ accountId }) {
         setBindings(prev => prev.filter((_, i) => i !== index));
     }, []);
 
-    const handleSave = () => {
+    const handleSave = useCallback(() => {
         setIsEditing(false);
         toast.success('已保存编辑内容');
-    };
+    }, []);
 
-    const deployWorkerScript = async () => {
+    const deployWorkerScript = useCallback(async () => {
         try {
-            await workersAPI.updateWorker(accountId, selectedWorker, editorContent);
+            // 从 editor 实例获取最新内容
+            const currentContent = editorRef.current?.getValue() || editorContent;
+            await workersAPI.updateWorker(accountId, selectedWorker, currentContent);
+            // 更新缓存和状态
+            scriptCache.current[selectedWorker] = currentContent;
+            setEditorContent(currentContent);
             toast.success('部署成功！Worker已更新');
             setIsEditing(false);
             loadWorkers();
         } catch (error) {
             toast.error('部署失败');
         }
-    };
+    }, [accountId, selectedWorker, editorContent, loadWorkers]);
 
     const createWorker = async () => {
         if (!newWorkerName.trim()) {
@@ -269,6 +297,9 @@ async function handleRequest(request) {
                 content: defaultScript
             });
 
+            // 缓存新创建的脚本
+            scriptCache.current[newWorkerName] = defaultScript;
+
             toast.success('Worker创建成功！');
             setShowCreateModal(false);
             setNewWorkerName('');
@@ -283,6 +314,8 @@ async function handleRequest(request) {
 
         try {
             await workersAPI.deleteWorker(accountId, scriptName);
+            // 清除缓存
+            delete scriptCache.current[scriptName];
             toast.success('删除成功！');
             if (selectedWorker === scriptName) {
                 setSelectedWorker(null);
@@ -319,7 +352,7 @@ async function handleRequest(request) {
 
         window.addEventListener('keydown', handleKeyPress);
         return () => window.removeEventListener('keydown', handleKeyPress);
-    }, [selectedWorker, isEditing, showCreateModal, activeTab, bindings]);
+    }, [selectedWorker, isEditing, showCreateModal, activeTab, handleSave, deployWorkerScript, saveSettings]);
 
     // Memoize filtered workers to avoid recalculation on every render
     const filteredWorkers = useMemo(() => {
@@ -491,34 +524,37 @@ async function handleRequest(request) {
                             {activeTab === 'code' && (
                                 <div className={`h-full border border-dark-700 rounded-lg overflow-hidden`}>
                                     <Editor
+                                        key={selectedWorker} // 关键：只在切换 Worker 时重新挂载
                                         height="100%"
                                         defaultLanguage="javascript"
                                         theme="vs-dark"
-                                        value={editorContent}
-                                        onChange={(value) => setEditorContent(value || '')}
+                                        defaultValue={editorContent} // 使用 defaultValue 而不是 value
+                                        onMount={(editor) => {
+                                            editorRef.current = editor;
+                                        }}
                                         options={{
                                             readOnly: !isEditing,
-                                            minimap: { enabled: false }, // Disable minimap for better performance
+                                            minimap: { enabled: false },
                                             fontSize: 14,
                                             lineNumbers: 'on',
                                             scrollBeyondLastLine: false,
                                             automaticLayout: true,
                                             tabSize: 2,
                                             wordWrap: 'on',
-                                            folding: false, // Disable code folding for performance
-                                            glyphMargin: false, // Disable glyph margin
+                                            folding: false,
+                                            glyphMargin: false,
                                             lineDecorationsWidth: 10,
                                             lineNumbersMinChars: 3,
                                             renderLineHighlight: 'line',
                                             scrollbar: {
                                                 vertical: 'auto',
                                                 horizontal: 'auto',
-                                                useShadows: false, // Disable shadows
+                                                useShadows: false,
                                                 verticalScrollbarSize: 10,
                                                 horizontalScrollbarSize: 10
                                             },
                                             suggest: {
-                                                showWords: false // Disable word-based suggestions
+                                                showWords: false
                                             }
                                         }}
                                         loading={<div className="flex items-center justify-center h-full text-gray-500">加载编辑器...</div>}
